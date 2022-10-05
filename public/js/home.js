@@ -1,12 +1,15 @@
 $(document).ready(() => {
   $.get("/api/posts", results => {
-    console.log(results);
     outputPosts(results, $(".postsContainer"))
   })
 })
 
 function outputPosts(results, container) {
   container.html("");
+
+  if (!Array.isArray(results)) {
+    results = [results];
+  }
   results.forEach(result => {
     const html = createPostHtml(result);
     container.append(html);

@@ -1,8 +1,10 @@
-$('#postTextarea').keyup( e => {
+$('#postTextarea, #replyTextarea').keyup( e => {
   const textbox = $(e.target)
   const value = textbox.val().trim()
- 
-  const submitButton = $("#submitPostButton");
+  
+  const isModal = textbox.parents(".modal").length == 1;
+  
+  const submitButton = isModal ? $("#submitReplyButton") : $("#submitPostButton");
  
   if (submitButton.length == 0) return alert("No Submit Button found");
 
@@ -14,13 +16,22 @@ $('#postTextarea').keyup( e => {
 
 })
   
-$("#submitPostButton").click((event) => {
+$("#submitPostButton, #submitReplyButton").click((event) => {
   const button = $(event.target);
-  const textbox = $("#postTextarea");
+
+  const isModal = button.parents(".modal").length == 1;
+  const textbox = isModal ? $("#replyTextarea") : $("#postTextarea");
 
   const data = {
     content: textbox.val()
   };
+
+  if (isModal) {
+    const id = button.data().id;
+    if (id == 0) return alert("Button id is null!");
+
+    data.replyTo = id;
+  }
 
   $.post("/api/posts", data, postData => {
 
@@ -30,6 +41,18 @@ $("#submitPostButton").click((event) => {
     button.prop("disabled", true);
   })
 })
+
+$("#replyModal").on("show.bs.modal", (e) => {
+  const button = $(e.relatedTarget);
+  const postId = getPostIdFromElement(button);
+  $("submitReplyButton").data("id", postId);
+  
+  $.get("/api/posts/" + postId, results => {
+    outputPosts(results, $("#originalPostContainer"));
+  })
+})
+
+$("#replyModal").on("hidden.bs.modal", () => $("#originalPostContainer").html(""))
 
 $(document).on("click", ".likeButton", (e) => {
   const button = $(e.target);
@@ -48,7 +71,27 @@ $(document).on("click", ".likeButton", (e) => {
       else {
         button.removeClass("active");
       }
-      console.log(postData.likes.length);
+    }
+  })
+})
+
+$(document).on("click", ".retweetButton", (e) => {
+  const button = $(e.target);
+  const postId = getPostIdFromElement(button);
+
+  if (postId === undefined) return;
+
+  $.ajax({
+    url: `/api/posts/${postId}/retweet`,
+    type: "POST",
+    success: (postData) => {
+      button.find("span").text(postData.retweetUsers.length || "")
+      if (postData.retweetUsers.includes(userLoggedIn._id)) {
+        button.addClass("active");
+      }
+      else {
+        button.removeClass("active");
+      }
     }
   })
 })
@@ -65,6 +108,12 @@ function getPostIdFromElement(element) {
 
 function createPostHtml(postData) {
 
+  if (postData == null) return alert("post object is null!");
+
+  const isRetweet = postData.retweetData != undefined;
+  const retweetedBy = isRetweet ? postData.postedBy.username : null;
+  postData = isRetweet ? postData.retweetData : postData;
+
   const postedBy = postData.postedBy;
 
   if (postedBy._id === undefined) {
@@ -75,8 +124,20 @@ function createPostHtml(postData) {
   const timestamp = timeDifference(new Date(), new Date(postData.createdAt));
 
   const likeButtonActiveClass = postData.likes.includes(userLoggedIn._id) ? "active" : "";
-  
+  const retweetButtonActiveClass = postData.retweetUsers.includes(userLoggedIn._id) ? "active" : "";
+
+  let retweetText = '';
+  if (isRetweet) {
+    retweetText = `<span>
+                     <i class="fas fa-retweet"></i>
+                     Retweeted von <a href='/porfile/${retweetedBy}'>@${retweetedBy}</a>
+                   </span>`; 
+  }
+
   return `<div class='post' data-id='${postData._id}'>
+            <div class='postActionContainer'>
+              ${retweetText}
+            </div>
             <div class='mainContentContainer'>
               <div class='userImageContainer'>
                 <img src='${postedBy.profilePic}'>
@@ -92,13 +153,14 @@ function createPostHtml(postData) {
                 </div>
                 <div class='postFooter'>
                   <div class='postButtonContainer'>
-                    <button>
+                    <button data-toggle='modal' data-target='#replyModal'>
                       <i class="far fa-comment"></i>
                     </button>
                   </div>
                   <div class='postButtonContainer green'>
-                    <button class='retweet'>
+                    <button class='retweetButton ${retweetButtonActiveClass}'>
                       <i class="fas fa-retweet"></i>
+                      <span>${postData.retweetUsers.length || ""}</span>
                     </button>
                   </div>
                   <div class='postButtonContainer red'>
@@ -112,6 +174,9 @@ function createPostHtml(postData) {
             </div>
           </div>`
 }
+
+
+
 function timeDifference(current, previous) {
 
   var msPerMinute = 60 * 1000;
