@@ -23,5 +23,23 @@ mixin createReplyModal(userLoggedIn)
             .textareaContainer
               textarea#replyTextarea(placeholder="Was geht ab!")
         .modal-footer
-          button.btn.btn-secondary(type='button', data-dismiss='modal') Close
+          button.btn.btn-secondary(type='button', data-dismiss='modal') Schliessen
           button#submitReplyButton.btn.btn-primary(type='button', disabled="") Antwort
+
+mixin createDeletePostModal()
+  #deletePostModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='deletePostModalLabel', aria-hidden='true')
+    .modal-dialog(role='document')
+      .modal-content
+        .modal-header
+          h5#deletePostModalLabel.modal-title Post löschen?
+          button.close(type='button', data-dismiss='modal', aria-label='Close')
+          span(aria-hidden='true') &times;
+        .modal-body
+          p Du kannst das nicht löschen.
+        .modal-footer
+          button.btn.btn-secondary(type='button', data-dismiss='modal') Schliessen
+          button#deletePostButton.btn.btn-primary(type='button', disabled="") Löschen
+
+mixin createPostModals(userLoggedIn)
+  +createReplyModal(userLoggedIn)
+  +createDeletePostModal()

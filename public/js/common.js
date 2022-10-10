@@ -60,6 +60,17 @@ $("#replyModal").on("show.bs.modal", (e) => {
 
 $("#replyModal").on("hidden.bs.modal", () => $("#originalPostContainer").html(""))
 
+$("#deletePostModal").on("show.bs.modal", (e) => {
+  const button = $(e.relatedTarget);
+  const postId = getPostIdFromElement(button);
+  $("#deletePostButton").data("id", postId);
+})
+
+$("#deletePostButton").click(() => {
+  
+  alert($("#deletePostButton").data().id);
+})
+
 $(document).on("click", ".likeButton", (e) => {
   const button = $(e.target);
   const postId = getPostIdFromElement(button);
@@ -170,6 +181,11 @@ function createPostHtml(postData, largeFont=false) {
                  </div>`;
     }
 
+  let buttons = "";
+  if (postData.postedBy._id == userLoggedIn._id) {
+    buttons = `<button data-id="${postData._id}" data-toggle="modal" data-target="#deletePostModal"><i class="fas fa-times"></i></button>`
+  }
+  
   return `<div class='post ${largeFontClass}' data-id='${postData._id}'>
             <div class='postActionContainer'>
               ${retweetText}
@@ -183,6 +199,7 @@ function createPostHtml(postData, largeFont=false) {
                   <a href='/profile/@${postedBy.username}'>${displayName}</a>
                   <span class='username'>@${postedBy.username}</span>
                   <span class='date'>${timestamp}</span>
+                  ${buttons}
                 </div>
                 ${replyFlag}
                 <div class='postBody'>
