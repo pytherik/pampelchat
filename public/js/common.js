@@ -54,7 +54,7 @@ $("#replyModal").on("show.bs.modal", (e) => {
   $("#submitReplyButton").data("id", postId);
   
   $.get("/api/posts/" + postId, results => {
-    outputPosts(results, $("#originalPostContainer"));
+    outputPosts(results.postData, $("#originalPostContainer"));
   })
 })
 
@@ -107,7 +107,7 @@ $(document).on("click", ".post", (e) => {
   const postId = getPostIdFromElement(element);
 
 
-  if (postId !== undefined && !element.is("button")) {
+  if (postId !== undefined && !element.is("button", "a")) {
     window.location.href = '/posts/' + postId;
   }
 })
@@ -122,7 +122,7 @@ function getPostIdFromElement(element) {
   return postId;
 }
 
-function createPostHtml(postData) {
+function createPostHtml(postData, largeFont=false) {
 
   if (postData == null) return alert("post object is null!");
 
@@ -141,6 +141,8 @@ function createPostHtml(postData) {
 
   const likeButtonActiveClass = postData.likes.includes(userLoggedIn._id) ? "active" : "";
   const retweetButtonActiveClass = postData.retweetUsers.includes(userLoggedIn._id) ? "active" : "";
+  const largeFontClass = largeFont ? "largeFont" : "";
+
 
   let retweetText = '';
   if (isRetweet) {
@@ -151,7 +153,7 @@ function createPostHtml(postData) {
   }
 
   let replyFlag = "";
-  if (postData.replyTo) {
+  if (postData.replyTo && postData.replyTo._id) {
 
     if (!postData.replyTo._id) {
       return alert("Reply to is not populated");
@@ -168,7 +170,7 @@ function createPostHtml(postData) {
                  </div>`;
     }
 
-  return `<div class='post' data-id='${postData._id}'>
+  return `<div class='post ${largeFontClass}' data-id='${postData._id}'>
             <div class='postActionContainer'>
               ${retweetText}
             </div>
@@ -252,6 +254,26 @@ function outputPosts(results, container) {
     results = [results];
   }
   results.forEach(result => {
+    const html = createPostHtml(result);
+    container.append(html);
+  })
+  if (results.length == 0) {
+    container.append("<span class='noResults>Nichts zu berichten</span>");
+  }
+}
+
+function outputPostsWithReplies(results, container) {
+  container.html("");
+
+  if (results.replyTo !== undefined && results.replyTo._id !== undefined) {
+    const html = createPostHtml(results.replyTo);
+    container.append(html);
+  }
+
+  const mainPosthtml = createPostHtml(results.postData, true);
+  container.append(mainPosthtml);
+
+  results.replies.forEach(result => {
     const html = createPostHtml(result);
     container.append(html);
   })
