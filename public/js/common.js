@@ -35,10 +35,16 @@ $("#submitPostButton, #submitReplyButton").click((event) => {
 
   $.post("/api/posts", data, postData => {
 
-    const html = createPostHtml(postData);
-    $(".postsContainer").prepend(html);
-    textbox.val("");
-    button.prop("disabled", true);
+    if (postData.replyTo) {
+      location.reload();
+    }
+    else {
+      const html = createPostHtml(postData);
+      $(".postsContainer").prepend(html);
+      textbox.val("");
+      button.prop("disabled", true);
+    }
+
   })
 })
 
@@ -96,6 +102,16 @@ $(document).on("click", ".retweetButton", (e) => {
   })
 })
 
+$(document).on("click", ".post", (e) => {
+  const element = $(e.target);
+  const postId = getPostIdFromElement(element);
+
+
+  if (postId !== undefined && !element.is("button")) {
+    window.location.href = '/posts/' + postId;
+  }
+})
+ 
 function getPostIdFromElement(element) {
   const isRoot = element.hasClass("post");
   const rootElement = isRoot ? element : element.closest(".post");
@@ -134,6 +150,24 @@ function createPostHtml(postData) {
                    </span>`; 
   }
 
+  let replyFlag = "";
+  if (postData.replyTo) {
+
+    if (!postData.replyTo._id) {
+      return alert("Reply to is not populated");
+
+    }
+    else if (!postData.replyTo.postedBy._id) {
+      console.log(postData.postedBy._id)
+      return alert("Posted by is not populated");
+    }
+
+    const replyToUsername = postData.replyTo.postedBy.username;
+    replyFlag = `<div class='replyFlag'>
+                   Antwort an <a href='/profile/${replyToUsername}'>@${replyToUsername}
+                 </div>`;
+    }
+
   return `<div class='post' data-id='${postData._id}'>
             <div class='postActionContainer'>
               ${retweetText}
@@ -148,6 +182,7 @@ function createPostHtml(postData) {
                   <span class='username'>@${postedBy.username}</span>
                   <span class='date'>${timestamp}</span>
                 </div>
+                ${replyFlag}
                 <div class='postBody'>
                   <span>${postData.content}</span>
                 </div>

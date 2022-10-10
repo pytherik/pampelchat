@@ -225,3 +225,11 @@ button span {
   font-size: 13px;
   color: var(--greyText);
 }
+
+.replyFlag {
+  margin-bottom: 5px;
+}
+
+.replyFlag a {
+  color: var(--blue);
+}
