@@ -45,7 +45,7 @@ $("#submitPostButton, #submitReplyButton").click((event) => {
 $("#replyModal").on("show.bs.modal", (e) => {
   const button = $(e.relatedTarget);
   const postId = getPostIdFromElement(button);
-  $("submitReplyButton").data("id", postId);
+  $("#submitReplyButton").data("id", postId);
   
   $.get("/api/posts/" + postId, results => {
     outputPosts(results, $("#originalPostContainer"));
@@ -175,8 +175,6 @@ function createPostHtml(postData) {
           </div>`
 }
 
-
-
 function timeDifference(current, previous) {
 
   var msPerMinute = 60 * 1000;
@@ -209,5 +207,20 @@ function timeDifference(current, previous) {
 
   else {
     return `vor ${Math.round(elapsed/msPerYear)} Jahren`;   
+  }
+}
+
+function outputPosts(results, container) {
+  container.html("");
+
+  if (!Array.isArray(results)) {
+    results = [results];
+  }
+  results.forEach(result => {
+    const html = createPostHtml(result);
+    container.append(html);
+  })
+  if (results.length == 0) {
+    container.append("<span class='noResults>Nichts zu berichten</span>");
   }
 }

@@ -44,6 +44,7 @@ app.use("/api/posts", postsApiRoute);
 app.get("/", middleware.requireLogin, (req, res, next) => {
 
   let payload = {
+    browserTitle: "pampelchat",
     pageTitle: "Home",
     userLoggedIn: req.session.user,
     userLoggedInJs: JSON.stringify(req.session.user)
